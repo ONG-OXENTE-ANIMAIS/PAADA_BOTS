@@ -30,6 +30,7 @@ Uso:
 import argparse
 import os
 import sys
+from datetime import datetime
 
 import requests
 
@@ -166,16 +167,12 @@ def oferta_mais_barata(ofertas):
     return min(com_preco, key=lambda oferta: oferta["price"])
 
 
-def oferta_destaque(ofertas):
-    """Devolve (oferta, em_promocao): promoção de maior desconto; senão, a mais barata."""
+def oferta_maior_desconto(ofertas):
+    """Devolve a oferta em promoção com o maior desconto (ou None)."""
     promocoes = [oferta for oferta in ofertas if oferta_em_promocao(oferta)]
-    if promocoes:
-        maior = max(
-            promocoes,
-            key=lambda oferta: (oferta["original_price"] - oferta["price"]) / oferta["original_price"],
-        )
-        return maior, True
-    return oferta_mais_barata(ofertas), False
+    if not promocoes:
+        return None
+    return max(promocoes, key=percentual_desconto)
 
 
 def atributo(attributes, identificador):
@@ -209,8 +206,8 @@ def percentual_desconto(oferta):
     return (referencia - preco) / referencia
 
 
-def mostrar_produto(indice, produto, oferta, total_ofertas, criterio):
-    """Exibe um produto com os dados da busca e da oferta em destaque."""
+def mostrar_produto(indice, produto, oferta, ofertas, criterio):
+    """Exibe um produto: oferta em destaque + lista de todas as ofertas por preço."""
     attrs = produto.get("attributes") or []
     imagens = produto.get("pictures") or []
     imagem = imagens[0].get("url") if imagens else None
@@ -230,7 +227,7 @@ def mostrar_produto(indice, produto, oferta, total_ofertas, criterio):
     print(f"  Link produto  : {link}")
     print(f"  Imagem        : {imagem or 'n/d'}")
     print(f"  Marca         : {atributo(attrs, 'BRAND') or 'n/d'}")
-    print(f"  Ofertas       : {total_ofertas}")
+    print(f"  Ofertas       : {len(ofertas)}")
     print(f"  Critério      : {criterio}")
     print(f"  Preço atual   : {preco if preco is not None else 'n/d'} {moeda}".rstrip())
     print(f"  Preço ref.    : {preco_referencia if preco_referencia is not None else 'n/d'}")
@@ -246,6 +243,25 @@ def mostrar_produto(indice, produto, oferta, total_ofertas, criterio):
         deal_ids = oferta.get("deal_ids") or []
         print(f"  Deal IDs      : {', '.join(str(deal) for deal in deal_ids) if deal_ids else 'nenhum'}")
 
+    ordenadas = sorted(
+        (item for item in ofertas if item.get("price") is not None),
+        key=lambda item: item["price"],
+    )
+    if ordenadas:
+        print("  Lista de ofertas (do mais barato ao mais caro):")
+        for num, item in enumerate(ordenadas[:5], start=1):
+            moeda_item = item.get("currency_id") or "BRL"
+            desconto_item = formatar_desconto(item.get("price"), item.get("original_price"))
+            marcador = f" (-{desconto_item}%)" if desconto_item else ""
+            frete_item = "frete grátis" if (item.get("shipping") or {}).get("free_shipping") else "frete pago"
+            cond_item = CONDICOES.get(item.get("condition"), item.get("condition") or "n/d")
+            print(
+                f"    {num}) {item.get('price')} {moeda_item}{marcador} | {cond_item} | {frete_item} "
+                f"| vendedor {item.get('seller_id')} | {item.get('item_id')}"
+            )
+        if len(ordenadas) > 5:
+            print(f"    ... +{len(ordenadas) - 5} ofertas (use a página do produto para ver todas)")
+
 
 def executar_busca(palavra_chave, args, token):
     """Executa uma busca completa: varre produtos e exibe os resultados."""
@@ -258,6 +274,7 @@ def executar_busca(palavra_chave, args, token):
     paging = dados.get("paging") or {}
 
     print(f'\nBusca: "{dados.get("keywords", palavra_chave)}"')
+    print(f"Consultado em: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')} (preços mudam com frequência)")
     print(f"Produtos no catálogo: {paging.get('total', 'n/d')} | varridos: {len(produtos)}")
     if not produtos:
         print("Nenhum produto encontrado para essa palavra-chave.")
@@ -275,14 +292,20 @@ def executar_busca(palavra_chave, args, token):
         if not ofertas:
             continue
         com_ofertas += 1
-        oferta, promocao = oferta_destaque(ofertas)
+        if args.so_promocoes:
+            oferta = oferta_maior_desconto(ofertas)
+            if oferta is None:
+                continue
+            promocao = True
+            criterio = "maior desconto"
+        else:
+            oferta = oferta_mais_barata(ofertas)
+            promocao = oferta_em_promocao(oferta)
+            criterio = "menor preço"
         if promocao:
             em_promocao += 1
-        if args.so_promocoes and not promocao:
-            continue
         exibidos += 1
-        criterio = "maior desconto" if promocao else "menor preço"
-        mostrar_produto(exibidos, produto, oferta, len(ofertas), criterio)
+        mostrar_produto(exibidos, produto, oferta, ofertas, criterio)
 
     print("-" * 72)
     print(
@@ -291,8 +314,8 @@ def executar_busca(palavra_chave, args, token):
     )
     if args.so_promocoes and exibidos == 0:
         print("Nenhum produto com desconto entre os resultados buscados. Aumente --scan ou tente outra palavra-chave.")
-    print("Obs.: preço vem de GET /products/{id}/items (buy_box_winner e permalink vazios para apps comuns).")
-    print("Obs.: promoção = original_price > price; o link abre a página do produto (/p/{id}).")
+    print("Obs.: preço vem de GET /products/{id}/items; destaque padrão = oferta mais barata.")
+    print("Obs.: promoção = original_price > price; use --so-promocoes para destacar maior desconto.")
     return 0
 
 
