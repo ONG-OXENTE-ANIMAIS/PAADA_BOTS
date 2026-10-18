@@ -1,0 +1,14 @@
+# Credenciais e ambiente local
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# IDEs
+.idea/
+.vscode/
+
+# Logs de erro dos scripts
+erro_execucao.log
