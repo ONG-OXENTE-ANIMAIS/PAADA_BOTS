@@ -73,7 +73,7 @@ def carregar_env_local(caminho=None):
     caminho = caminho or CAMINHO_ENV
     if not os.path.isfile(caminho):
         return
-    with open(caminho, encoding="utf-8") as arquivo:
+    with open(caminho, encoding="utf-8-sig") as arquivo:
         for linha in arquivo:
             linha = linha.strip()
             if not linha or linha.startswith("#") or "=" not in linha:
