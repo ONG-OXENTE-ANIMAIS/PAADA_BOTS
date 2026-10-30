@@ -1,21 +1,33 @@
-"""Ponto de entrada: busca produtos no Mercado Livre e (em breve) gera links de afiliados.
+"""Ponto de entrada: busca produtos no Mercado Livre, gera links de afiliados e grava no Excel.
 
 Fluxo:
     1. Carrega o token do .env
-    2. Busca produtos pela API oficial (teste_busca_produtos.executar_busca)
+    2. Sorteia um termo e busca produtos pela API oficial (teste_busca_produtos.executar_busca)
     3. Seleciona os primeiros produtos válidos (limit)
     4. Extrai os links dos produtos
-    5. Passa os links para o link_afiliados.py        <- PENDENTE
-    6. Exibe os links no terminal
+    5. Gera os links de afiliados (link_afiliados.py)      <- PENDENTE
+    6. Grava os produtos na planilha ofertas.xlsx
+    7. Exibe os links no terminal
 """
 
 import os
+import random
 import sys
 from types import SimpleNamespace
 
+from planilha_ofertas import salvar_ofertas
 from teste_busca_produtos import carregar_env_local, configurar_console, executar_busca
 
-PALAVRA_CHAVE = "monitor gamer"
+PALAVRAS_CHAVE = [
+    "ração para cachorro",
+    "ração para gato",
+    "cama para cachorro",
+    "arranhador para gato",
+    "coleira para cachorro",
+    "caixa de areia para gato",
+    "bebedouro para pets",
+    "brinquedo para cachorro",
+]
 QUANTIDADE_PRODUTOS = 5
 PRODUTOS_VARRIDOS = 15  # muitos produtos de catálogo não têm ofertas; aumente se vier menos de 5
 
@@ -31,14 +43,16 @@ def main():
         print("Rode 'python obter_token.py --url' e depois 'python obter_token.py <code>'.")
         return 2
 
-    # 2 e 3. Busca e seleção dos produtos válidos
+    # 2 e 3. Sorteio do termo, busca e seleção dos produtos válidos
+    palavra_chave = random.choice(PALAVRAS_CHAVE)
+    print(f'Termo sorteado: "{palavra_chave}"')
     args = SimpleNamespace(
         scan=PRODUTOS_VARRIDOS,
         limit=QUANTIDADE_PRODUTOS,
         so_promocoes=False,
         afiliados=False,
     )
-    produtos = executar_busca(PALAVRA_CHAVE, args, token)
+    produtos = executar_busca(palavra_chave, args, token)
     if not produtos:
         print("\nNenhum produto válido retornado. Se viu erro 401 acima, o token expirou:")
         print("rode 'python obter_token.py --atualizar'.")
@@ -52,10 +66,13 @@ def main():
 
     # 5. Geração dos links de afiliados
     # PENDENTE: a chamada depende da assinatura real de gerar_links_afiliados()
-    # em link_afiliados.py (recebe lista de URLs? lista de dicionários? retorna algo?).
-    # Será escrita depois de analisarmos esse arquivo.
+    # em link_afiliados.py. Quando existir, o resultado deve ser guardado em
+    # produto["link_afiliado"] para cada produto, ANTES do passo 6.
 
-    # 6. Exibição dos links de afiliados: também depende do retorno do passo 5.
+    # 6. Grava na planilha (a coluna "Link afiliado" fica vazia até o passo 5 existir)
+    salvar_ofertas(produtos, palavra_chave)
+
+    # 7. Exibição dos links de afiliados: também depende do passo 5.
     return 0
 
 
