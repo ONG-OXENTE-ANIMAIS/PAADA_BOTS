@@ -59,10 +59,16 @@ python teste_busca_produtos.py
 # ...ou passa a busca direto como argumento (sem menu):
 python teste_busca_produtos.py "fone jbl" --limit 5
 python teste_busca_produtos.py "capa iphone 16" --limit 5 --so-promocoes --scan 30  # só descontos reais
+python teste_busca_produtos.py "fone jbl" --limit 5 --afiliados  # gera links de afiliados
 
 # 5. Renovar o token antes de expirar (~6h)
 python obter_token.py --atualizar
 ```
+
+Com `--afiliados`, o Selenium abre o gerador oficial em uma janela do Chrome.
+Se for solicitado, faça login manualmente e aguarde o processamento; cada falha
+é informada individualmente sem interromper os demais produtos. Não automatize
+nem contorne CAPTCHAs ou outras proteções.
 
 Também funciona rodando da raiz do projeto com o caminho:
 `python mercadolivre/teste_busca_produtos.py "fone jbl"`.

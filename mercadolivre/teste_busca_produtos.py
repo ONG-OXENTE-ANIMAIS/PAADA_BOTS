@@ -263,60 +263,83 @@ def mostrar_produto(indice, produto, oferta, ofertas, criterio):
             print(f"    ... +{len(ordenadas) - 5} ofertas (use a página do produto para ver todas)")
 
 
+
 def executar_busca(palavra_chave, args, token):
-    """Executa uma busca completa: varre produtos e exibe os resultados."""
+    """Executa uma busca e retorna os dados dos produtos encontrados."""
+
     varredura = args.scan if args.scan is not None else max(args.limit * 3, 15)
     dados = buscar_produtos(palavra_chave, varredura, token)
+
     if dados is None:
-        return 1
+        return []
 
     produtos = dados.get("results") or []
     paging = dados.get("paging") or {}
 
     print(f'\nBusca: "{dados.get("keywords", palavra_chave)}"')
-    print(f"Consultado em: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')} (preços mudam com frequência)")
-    print(f"Produtos no catálogo: {paging.get('total', 'n/d')} | varridos: {len(produtos)}")
+    print(f"Produtos no catálogo: {paging.get('total', 'n/d')}")
+
     if not produtos:
-        print("Nenhum produto encontrado para essa palavra-chave.")
-        return 0
+        print("Nenhum produto encontrado.")
+        return []
 
-    print(f"Consultas à API: 1 busca + 1 consulta de ofertas por produto (até {1 + len(produtos)} no total)")
+    produtos_para_afiliado = []
 
-    exibidos = 0
-    em_promocao = 0
-    com_ofertas = 0
     for produto in produtos:
-        if exibidos >= args.limit:
+        if len(produtos_para_afiliado) >= args.limit:
             break
+
         ofertas = buscar_ofertas(produto.get("id"), token)
+
         if not ofertas:
             continue
-        com_ofertas += 1
+
         if args.so_promocoes:
             oferta = oferta_maior_desconto(ofertas)
             if oferta is None:
                 continue
-            promocao = True
             criterio = "maior desconto"
         else:
             oferta = oferta_mais_barata(ofertas)
-            promocao = oferta_em_promocao(oferta)
             criterio = "menor preço"
-        if promocao:
-            em_promocao += 1
-        exibidos += 1
-        mostrar_produto(exibidos, produto, oferta, ofertas, criterio)
 
-    print("-" * 72)
-    print(
-        f"Resumo: varridos {len(produtos)} produtos, {com_ofertas} com ofertas ativas; "
-        f"{exibidos} exibido(s), {em_promocao} com desconto real."
-    )
-    if args.so_promocoes and exibidos == 0:
-        print("Nenhum produto com desconto entre os resultados buscados. Aumente --scan ou tente outra palavra-chave.")
-    print("Obs.: preço vem de GET /products/{id}/items; destaque padrão = oferta mais barata.")
-    print("Obs.: promoção = original_price > price; use --so-promocoes para destacar maior desconto.")
-    return 0
+        produto_id = produto.get("id")
+
+        if not produto_id:
+            continue
+
+        preco = oferta.get("price")
+        preco_original = oferta.get("original_price")
+
+        desconto = formatar_desconto(preco, preco_original)
+
+        produto_info = {
+            "id": produto_id,
+            "nome": produto.get("name"),
+            "url": LINK_PAGINA_PRODUTO.format(produto_id=produto_id),
+            "preco": preco,
+            "preco_original": preco_original,
+            "desconto": desconto,
+            "moeda": oferta.get("currency_id", "BRL"),
+            "vendedor": oferta.get("seller_id"),
+            "condicao": oferta.get("condition"),
+            "frete_gratis": (oferta.get("shipping") or {}).get("free_shipping"),
+            "criterio": criterio
+        }
+
+        produtos_para_afiliado.append(produto_info)
+
+        mostrar_produto(
+            len(produtos_para_afiliado),
+            produto,
+            oferta,
+            ofertas,
+            criterio
+        )
+
+    print(f"\nTotal de produtos encontrados: {len(produtos_para_afiliado)}")
+
+    return produtos_para_afiliado
 
 
 def aviso_sem_terminal():
@@ -401,6 +424,11 @@ def main():
         "--so-promocoes",
         action="store_true",
         help="Mostra apenas produtos com desconto real (preço atual < preço de referência)",
+    )
+    parser.add_argument(
+        "--afiliados",
+        action="store_true",
+        help="Abre o gerador oficial e tenta criar links de afiliados para os produtos exibidos",
     )
     args = parser.parse_args()
 
