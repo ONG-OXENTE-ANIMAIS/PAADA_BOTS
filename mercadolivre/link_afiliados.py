@@ -4,7 +4,7 @@ Usa um perfil próprio do Chrome (pasta perfil_chrome/, ao lado deste arquivo)
 para manter o login entre execuções. O Selenium NÃO usa o seu Chrome do dia a dia,
 então o login precisa ser feito uma vez nesse perfil.
 
-Uso (por enquanto, só para testar):
+O main.py importa gerar_links_afiliados(). Uso direto, para login e testes:
     python link_afiliados.py --login              # 1ª vez: abre o navegador para você logar
     python link_afiliados.py --testar "<link>"    # gera o link de afiliado e mostra no terminal
 
@@ -71,6 +71,28 @@ def gerar_link_afiliado(driver, link_produto):
     """Gera e devolve o link de afiliado de um produto."""
     preencher_e_gerar(driver, link_produto)
     return ler_link_gerado(driver)
+
+
+def gerar_links_afiliados(links_produtos):
+    """Gera o link de afiliado de cada link de produto, reaproveitando um único navegador.
+
+    Recebe uma lista de URLs. Devolve um dicionário {url_do_produto: link_de_afiliado},
+    com None nos produtos em que a geração falhou (o erro aparece no terminal).
+    """
+    resultados = {}
+    driver = abrir_navegador()
+    try:
+        total = len(links_produtos)
+        for indice, link in enumerate(links_produtos, start=1):
+            print(f"  [{indice}/{total}] gerando link de afiliado...")
+            try:
+                resultados[link] = gerar_link_afiliado(driver, link)
+            except TimeoutException:
+                print(f"  Falhou (tempo esgotado): {link}")
+                resultados[link] = None
+    finally:
+        driver.quit()
+    return resultados
 
 
 def modo_login():

@@ -5,9 +5,9 @@ Fluxo:
     2. Sorteia um termo e busca produtos pela API oficial (teste_busca_produtos.executar_busca)
     3. Seleciona os primeiros produtos válidos (limit)
     4. Extrai os links dos produtos
-    5. Gera os links de afiliados (link_afiliados.py)      <- PENDENTE
-    6. Grava os produtos na planilha ofertas.xlsx
-    7. Exibe os links no terminal
+    5. Gera os links de afiliados no navegador (link_afiliados.gerar_links_afiliados)
+    6. Grava os produtos e os links de afiliados na planilha ofertas.xlsx
+    7. Exibe os links de afiliados no terminal
 """
 
 import os
@@ -15,6 +15,7 @@ import random
 import sys
 from types import SimpleNamespace
 
+from link_afiliados import gerar_links_afiliados
 from planilha_ofertas import salvar_ofertas
 from teste_busca_produtos import carregar_env_local, configurar_console, executar_busca
 
@@ -60,19 +61,30 @@ def main():
 
     # 4. Links dos produtos
     links_produtos = [produto["url"] for produto in produtos]
-    print("\nLinks dos produtos encontrados:")
-    for link in links_produtos:
-        print(f"  {link}")
 
-    # 5. Geração dos links de afiliados
-    # PENDENTE: a chamada depende da assinatura real de gerar_links_afiliados()
-    # em link_afiliados.py. Quando existir, o resultado deve ser guardado em
-    # produto["link_afiliado"] para cada produto, ANTES do passo 6.
+    # 5. Links de afiliados (Selenium). Se o navegador falhar por completo, o programa
+    # continua e grava os produtos na planilha com a coluna "Link afiliado" vazia.
+    print("\nGerando links de afiliados no navegador (não use o teclado nem copie nada agora)...")
+    try:
+        links_afiliados = gerar_links_afiliados(links_produtos)
+    except Exception as erro:
+        print(f"Erro ao abrir/usar o navegador: {erro}")
+        print("Confira se há outra janela usando a pasta perfil_chrome e se o login foi feito (--login).")
+        links_afiliados = {}
+    for produto in produtos:
+        produto["link_afiliado"] = links_afiliados.get(produto["url"])
 
-    # 6. Grava na planilha (a coluna "Link afiliado" fica vazia até o passo 5 existir)
+    # 6. Grava na planilha, já com o link de afiliado de cada produto
     salvar_ofertas(produtos, palavra_chave)
 
-    # 7. Exibição dos links de afiliados: também depende do passo 5.
+    # 7. Exibição dos links de afiliados
+    print("\nLinks de afiliados gerados:")
+    for produto in produtos:
+        print(f"  {produto['nome']}")
+        print(f"    {produto['link_afiliado'] or 'NÃO GERADO'}")
+
+    gerados = sum(1 for produto in produtos if produto["link_afiliado"])
+    print(f"\n{gerados} de {len(produtos)} links de afiliados gerados.")
     return 0
 
 
