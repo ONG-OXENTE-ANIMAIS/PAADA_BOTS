@@ -1,1 +1,67 @@
 
+import time
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
+opcoes = webdriver.ChromeOptions()
+opcoes.add_argument("--start-maximized")
+
+navegador = webdriver.Chrome(options=opcoes)
+espera = WebDriverWait(navegador, 180)
+
+navegador.get("https://web.whatsapp.com/")
+
+espera.until(
+    EC.presence_of_element_located((By.ID, "side"))
+)
+
+fechar = navegador.find_elements(
+    By.XPATH,
+    "//div[@role='dialog']//button[@aria-label='Fechar']"
+)
+
+if len(fechar) > 0:
+    fechar[0].click()
+
+nome_grupo = "TESTE PAADA"
+
+grupo = espera.until(
+    EC.element_to_be_clickable(
+        (By.XPATH, "//span[@title='" + nome_grupo + "']")
+    )
+)
+
+grupo.click()
+
+campo_mensagem = espera.until(
+    EC.element_to_be_clickable(
+        (By.XPATH, "//footer//div[@contenteditable='true']")
+    )
+)
+
+mensagem = [
+    "🚨 PROMOÇÃO RELÂMPAGO 🚨",
+    "🐕 Ração Quatree Supreme Dermato Cães Adultos (15kg)",
+    "🥩 Sabor: Cordeiro e Salmão",
+    "✨ A melhor alimentação para o seu pet ficar livre de coceiras indesejadas.",
+    "❌ De: R$ 266,68",
+    "📉 Por: R$ 232,10 (12% DE DESCONTO)",
+    "👇 Clique abaixo para garantir (Estoque Limitado):",
+    "🔗 https://encurtador.com.br/Cqpg"
+]
+
+campo_mensagem.click()
+
+for i, linha in enumerate(mensagem):
+    campo_mensagem.send_keys(linha)
+
+    if i < len(mensagem) - 1:
+        campo_mensagem.send_keys(Keys.SHIFT, Keys.ENTER)
+
+campo_mensagem.send_keys(Keys.ENTER)
+
+time.sleep(30)
+
