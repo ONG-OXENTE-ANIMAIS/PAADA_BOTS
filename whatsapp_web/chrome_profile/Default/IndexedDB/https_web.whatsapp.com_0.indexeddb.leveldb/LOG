@@ -1,0 +1,22 @@
+2026/11/01-21:26:38.210 67a0 Reusing MANIFEST C:\Users\home\OneDrive\Documentos\whatsapp_web\chrome_profile\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/11/01-21:26:38.211 67a0 Recovering log #144
+2026/11/01-21:26:38.217 67a0 Reusing old log C:\Users\home\OneDrive\Documentos\whatsapp_web\chrome_profile\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/000144.log 
+2026/11/01-21:26:43.397 1160 Level-0 table #154: started
+2026/11/01-21:26:43.412 1160 Level-0 table #154: 1213840 bytes OK
+2026/11/01-21:26:43.415 1160 Delete type=0 #144
+2026/11/01-21:26:43.540 67a0 Compacting 1@1 + 6@2 files
+2026/11/01-21:26:43.584 67a0 Generated table #155@1: 78989 keys, 2248260 bytes
+2026/11/01-21:26:43.614 67a0 Generated table #156@1: 26548 keys, 2172656 bytes
+2026/11/01-21:26:43.632 67a0 Generated table #157@1: 1813 keys, 2141683 bytes
+2026/11/01-21:26:43.650 67a0 Generated table #158@1: 2155 keys, 2152221 bytes
+2026/11/01-21:26:43.684 67a0 Generated table #159@1: 16473 keys, 2212033 bytes
+2026/11/01-21:26:43.721 67a0 Generated table #160@1: 20361 keys, 1909061 bytes
+2026/11/01-21:26:43.721 67a0 Compacted 1@1 + 6@2 files => 12835914 bytes
+2026/11/01-21:26:43.722 67a0 compacted to: files[ 0 0 6 0 0 0 0 ]
+2026/11/01-21:26:43.722 67a0 Delete type=2 #146
+2026/11/01-21:26:43.722 67a0 Delete type=2 #147
+2026/11/01-21:26:43.722 67a0 Delete type=2 #148
+2026/11/01-21:26:43.722 67a0 Delete type=2 #149
+2026/11/01-21:26:43.722 67a0 Delete type=2 #150
+2026/11/01-21:26:43.722 67a0 Delete type=2 #151
+2026/11/01-21:26:43.723 67a0 Delete type=2 #154
